@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  mini-atlas:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: mini-atlas
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      
+      # Agent Settings
+      - AGENT_MAX_STEPS=${AGENT_MAX_STEPS:-30}
+      - AGENT_STEP_TIMEOUT=${AGENT_STEP_TIMEOUT:-30}
+      - AGENT_TOTAL_TIMEOUT=${AGENT_TOTAL_TIMEOUT:-300}
+      
+      # Browser Configuration
+      - BROWSER=${BROWSER:-headless}
+      - PROXY_URL=${PROXY_URL:-}
+      - USER_AGENT=${USER_AGENT:-}
+      - TIMEZONE=${TIMEZONE:-Europe/Istanbul}
+      
+      # Redis URL (if using Redis)
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    
+    volumes:
+      # Persist storage directory
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+      
+    # Increase shared memory for Chrome
+    shm_size: '2gb'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: mini-atlas-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: MongoDB for session storage
+  mongo:
+    image: mongo:6
+    container_name: mini-atlas-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secretpassword
+      - MONGO_INITDB_DATABASE=miniatlas
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    profiles:
+      - with-mongo
+
+volumes:
+  redis_data:
+  mongo_data:

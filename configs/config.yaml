@@ -1,0 +1,34 @@
+agent:
+  max_steps: 30
+  allow_navigation: true
+  screenshot_every_step: true
+  vision_enabled: true           # Use LLM vision model if available
+  action_schema_strict: true
+  wait_after_action_ms: 500
+
+browser:
+  default_timeout_ms: 15000
+  navigation_timeout_ms: 30000
+  storage_mode: ephemeral        # ephemeral | persistent
+  persistent_dir: ./storage       # used if persistent mode
+  context_isolation: true
+  locale: tr-TR
+  timezone: Europe/Istanbul
+  viewport:
+    width: 1366
+    height: 768
+
+network:
+  record_responses: true
+  max_payload_kb: 256
+  verify_backend_success: true
+
+security:
+  block_file_dialogs: true
+  block_downloads: true
+  confirm_sensitive_actions: true  # payment, permanent changes, etc.
+
+telemetry:
+  json_logging: true
+  redact_secrets: true
+  sink: stdout
