@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import inspect
 import time
 from typing import Dict, List, Optional
 
@@ -75,14 +76,17 @@ class AgentLoop:
                             session.status = SessionStatus.COMPLETED
                             logger.info(f"Session completed: {step.action.summary}")
                             break
-                        
-                        # Check for errors
-                        if step.error:
-                            logger.warning(f"Step {step.step_number} error: {step.error}")
-                            # Continue unless critical error
-                            if "human intervention" in step.error.lower():
-                                session.status = SessionStatus.WAITING_HUMAN
-                                break
+                    
+                    # Check for errors
+                    if step.error:
+                        logger.warning(f"Step {step.step_number} error: {step.error}")
+                        # Continue unless critical error
+                        if "human intervention" in step.error.lower():
+                            session.status = SessionStatus.WAITING_HUMAN
+                            break
+                        else:
+                            session.status = SessionStatus.FAILED
+                            break
                     
                     # Periodic cleanup
                     if session.steps_count % 10 == 0:
@@ -174,11 +178,20 @@ class AgentLoop:
         ]
         
         # Generate action
-        action = await llm_client.generate_action(
-            self._format_observation(observation),
-            session.goals,
-            step_history
-        )
+        try:
+            action = await llm_client.generate_action(
+                self._format_observation(observation),
+                session.goals,
+                step_history
+            )
+        except Exception as exc:
+            logger.error(f"Step {step_num}: LLM provider error: {exc}")
+            return AgentStep(
+                step_number=step_num,
+                observation=observation,
+                reasoning="Failed to generate action from LLM provider",
+                error=str(exc)
+            )
         
         if not action:
             return AgentStep(
@@ -261,9 +274,9 @@ class AgentLoop:
                 content = content[:50000] + "\n... [content truncated] ..."
             
             # Count interactive elements
-            buttons = await page.locator('button, input[type="button"], input[type="submit"]').count()
-            forms = await page.locator('form').count()
-            inputs = await page.locator('input, textarea, select').count()
+            buttons = await self._count_locator(page, 'button, input[type="button"], input[type="submit"]')
+            forms = await self._count_locator(page, 'form')
+            inputs = await self._count_locator(page, 'input, textarea, select')
             
             # Take screenshot if enabled
             screenshot_base64 = None
@@ -300,6 +313,34 @@ class AgentLoop:
                 content=f"Failed to observe page: {str(e)}",
                 element_count=0
             )
+
+    async def _count_locator(self, page: Page, selector: str) -> int:
+        """Safely count elements for a selector, handling sync/async mocks."""
+        try:
+            locator = page.locator(selector)
+            if inspect.isawaitable(locator):
+                locator = await locator
+            
+            if not hasattr(locator, "count"):
+                return 0
+            
+            count_result = locator.count()
+            if inspect.isawaitable(count_result):
+                count_result = await count_result
+            
+            if isinstance(count_result, bool):
+                return int(count_result)
+            if isinstance(count_result, (int, float)):
+                return int(count_result)
+            
+            try:
+                return int(count_result)
+            except (TypeError, ValueError):
+                return 0
+        
+        except Exception as e:
+            logger.debug(f"Locator count failed for '{selector}': {e}")
+            return 0
     
     def _format_observation(self, observation: ObservationState) -> str:
         """Format observation for LLM consumption."""

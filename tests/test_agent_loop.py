@@ -86,18 +86,20 @@ async def test_run_step_with_done_action(test_session, mock_page, mock_network_m
     agent = AgentLoop()
     
     # Mock LLM to return done action
-    with patch('app.agent_loop.llm_client.generate_action') as mock_generate:
-        mock_generate.return_value = DoneAction(summary="Task completed")
-        
-        # Mock action executor
-        with patch('app.agent_loop.action_executor.execute') as mock_execute:
-            mock_execute.return_value = (True, None, {"summary": "Task completed"})
+    with patch('app.agent_loop.captcha_handler.detector.detect') as mock_detect:
+        mock_detect.return_value = (False, None, None)
+        with patch('app.agent_loop.llm_client.generate_action') as mock_generate:
+            mock_generate.return_value = DoneAction(summary="Task completed")
             
-            step = await agent._run_step(test_session, mock_page, mock_network_monitor)
-            
-            assert step is not None
-            assert step.action.action == "done"
-            assert step.result == "Success"
+            # Mock action executor
+            with patch('app.agent_loop.action_executor.execute') as mock_execute:
+                mock_execute.return_value = (True, None, {"summary": "Task completed"})
+                
+                step = await agent._run_step(test_session, mock_page, mock_network_monitor)
+                
+                assert step is not None
+                assert step.action.action == "done"
+                assert step.result == "Success"
 
 
 @pytest.mark.asyncio

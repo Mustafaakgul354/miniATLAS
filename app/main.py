@@ -17,7 +17,7 @@ from .schemas import (
     SessionStatus, StatusResponse
 )
 from .utils.logging import get_logger
-from .templates import dashboard_html, session_detail_html
+from .templates import dashboard_html, session_detail_html, atlas_interface_html
 
 logger = get_logger(__name__)
 
@@ -62,6 +62,12 @@ app.add_middleware(
 async def root():
     """Root endpoint - Dashboard."""
     return dashboard_html()
+
+
+@app.get("/atlas", response_class=HTMLResponse)
+async def atlas_interface():
+    """ATLAS-style interface with split view."""
+    return atlas_interface_html()
 
 
 @app.get("/api", response_class=JSONResponse)

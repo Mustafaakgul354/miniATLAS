@@ -224,7 +224,7 @@ class LLMClient:
         messages = [
             {
                 "role": "system",
-                "content": self._get_executor_prompt()
+                "content": self._get_executor_prompt(goals)
             },
             {
                 "role": "user",
@@ -314,29 +314,31 @@ class LLMClient:
             max_tokens=500
         )
     
-    def _get_executor_prompt(self) -> str:
+    def _get_executor_prompt(self, goals: List[str]) -> str:
         """Get the executor system prompt."""
-        return """You are a browser automation agent. Your task is to analyze the current page state and determine the next action to achieve the given goals.
-
-You must respond with ONLY valid JSON matching one of these action schemas:
-
-Click: {"action": "click", "selector": "text=Continue"}
-Fill: {"action": "fill", "selector": "input[name=email]", "value": "user@example.com", "press_enter": false}
-Navigate: {"action": "goto", "url": "https://example.com/dashboard"}
-Press Key: {"action": "press", "key": "Enter"}
-Wait: {"action": "wait_for_selector", "selector": "text=Welcome", "timeout_ms": 10000}
-Assert URL: {"action": "assert_url_includes", "value": "/dashboard"}
-Complete: {"action": "done", "summary": "Login completed, dashboard opened."}
-
-Rules:
-1. Use semantic selectors when possible (text=, role=, label=)
-2. Be specific with selectors to avoid ambiguity
-3. Only navigate if explicitly needed for the goal
-4. Prefer clicking buttons over pressing Enter
-5. Wait for important elements after navigation
-6. Mark as done only when all goals are achieved
-7. NEVER include explanations - ONLY output the JSON action
-"""
+        goals_section = "\n".join(f"- {goal}" for goal in goals) or "- Follow the user's instructions."
+        
+        return (
+            "You are a browser automation agent. Analyze the current page and select the next action that moves the user closer to their goals while keeping the browser state stable.\n\n"
+            f"Session goals provided by the user:\n{goals_section}\n\n"
+            "You must respond with ONLY valid JSON matching one of these action schemas:\n\n"
+            'Click: {"action": "click", "selector": "text=Continue"}\n'
+            'Fill: {"action": "fill", "selector": "input[name=email]", "value": "user@example.com", "press_enter": false}\n'
+            'Navigate: {"action": "goto", "url": "https://example.com/dashboard"}\n'
+            'Press Key: {"action": "press", "key": "Enter"}\n'
+            'Wait: {"action": "wait_for_selector", "selector": "text=Welcome", "timeout_ms": 10000}\n'
+            'Assert URL: {"action": "assert_url_includes", "value": "/dashboard"}\n'
+            'Complete: {"action": "done", "summary": "Login completed, dashboard opened."}\n\n'
+            "Rules:\n"
+            "1. Use semantic selectors when possible (text=, role=, label=)\n"
+            "2. Be specific with selectors to avoid ambiguity\n"
+            "3. Only navigate if explicitly needed for the goal\n"
+            "4. Prefer clicking buttons over pressing Enter\n"
+            "5. Wait for important elements after navigation\n"
+            "6. Mark as done only when all goals are achieved\n"
+            "7. Work in the same language the user provided when summarizing results\n"
+            "8. NEVER include explanations - ONLY output the JSON action\n"
+        )
     
     def _format_action_request(
         self,

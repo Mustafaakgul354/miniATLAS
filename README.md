@@ -62,20 +62,52 @@ http://localhost:8000
 
 ## Web Interface
 
-mini-Atlas includes a modern web dashboard for monitoring and managing agent sessions:
+mini-Atlas includes **two modern web interfaces** for monitoring and managing agent sessions:
 
+### 🚀 ATLAS Interface (NEW!)
+
+**ChatGPT-ATLAS style split-screen interface** - Modern, real-time agent monitoring:
+
+```
+http://localhost:8000/atlas
+```
+
+**Features:**
+- **Split Screen Layout**: Browser view on left, agent logs on right
+- **Real-time Updates**: Live agent reasoning and actions (auto-refresh every 2s)
+- **Screenshot Preview**: See browser screenshots as they're captured
+- **Modern Dark Theme**: Beautiful, distraction-free interface
+- **Single-Page Experience**: Everything in one view
+
+**Perfect for:** Watching the agent work in real-time, development, demos
+
+See [ATLAS_INTERFACE.md](ATLAS_INTERFACE.md) for detailed documentation.
+
+### 📊 Dashboard (Classic)
+
+Traditional session management dashboard:
+
+```
+http://localhost:8000
+```
+
+**Features:**
 - **Dashboard**: View all active and completed sessions
 - **Session Detail**: See real-time step-by-step progress with screenshots
 - **Action History**: Track all actions taken by the agent
 - **CAPTCHA Handling**: Visual indicators and continue buttons for CAPTCHA interruptions
 - **Real-time Updates**: Auto-refreshing status for active sessions
 
+**Perfect for:** Managing multiple sessions, reviewing history
+
 ### Using the Web UI
 
-1. **Start a Session**: Fill in the URL and goals on the dashboard (or use CLI: `python cli.py`)
-2. **Monitor Progress**: Click on any session to see detailed step-by-step execution
+1. **Start a Session**: 
+   - ATLAS Interface: Enter URL and goals directly on the page
+   - Dashboard: Fill in the form or use CLI: `python cli.py`
+2. **Monitor Progress**: Watch real-time in ATLAS or click session in Dashboard
 3. **View Screenshots**: Each step includes screenshots (if enabled) - click to enlarge
-4. **Handle CAPTCHAs**: If a CAPTCHA is detected, solve it manually and click "Devam Et" (Continue)
+4. **Handle CAPTCHAs**: If a CAPTCHA is detected, solve it manually and click "Continue"
 5. **Review Actions**: See what the agent did at each step with reasoning and results
 
 **Note:** Web arayüzünde dashboard'da CLI kullanım bilgileri de yer almaktadır.
@@ -85,6 +117,7 @@ mini-Atlas includes a modern web dashboard for monitoring and managing agent ses
 Using Docker Compose (recommended):
 
 ```bash
+# Make sure you have a configured .env in the project root (cp .env.example .env)
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
@@ -284,15 +317,23 @@ security:
 
 ## API Reference
 
-### Endpoints
+### Web UI Endpoints
+
+- `GET /` - Dashboard (classic session list)
+- `GET /atlas` - ATLAS Interface (modern split-screen view)
+- `GET /session/{session_id}` - Session detail page
+
+### API Endpoints
 
 - `POST /run` - Start new agent session
 - `GET /status/{session_id}` - Get session status
+- `GET /api/session/{session_id}/full` - Get full session data with screenshots
 - `POST /stop/{session_id}` - Stop running session
 - `POST /agent/continue/{session_id}` - Continue after human intervention
 - `GET /sessions` - List all sessions
 - `DELETE /sessions/{session_id}` - Delete session
 - `GET /health` - Health check
+- `GET /api` - API info
 
 ### Action Schema
 

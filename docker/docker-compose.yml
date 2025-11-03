@@ -6,8 +6,6 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: mini-atlas
-    env_file:
-      - ../.env
     ports:
       - "8000:8000"
     environment:
@@ -29,6 +27,7 @@ services:
       
       # Redis URL (if using Redis)
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - MONGO_URL=${MONGO_URL:-}
       
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-INFO}

@@ -4,7 +4,9 @@ import sys
 from typing import Any, Dict
 
 import orjson
-from loguru import logger
+from loguru import logger as _loguru_logger
+
+logger = _loguru_logger
 
 from ..config import config
 
@@ -58,25 +60,33 @@ def redact_sensitive(message: str) -> str:
 
 def setup_logging():
     """Configure logging based on settings."""
-    # Remove default handler
-    logger.remove()
+    global logger  # noqa: PLW0603
     
-    # Configure format based on json_logging setting
+    # Remove default handler
+    _loguru_logger.remove()
+    
+    def patch_record(record: Dict[str, Any]) -> None:
+        """Modify log record in-place before formatting."""
+        record["message"] = redact_sensitive(record["message"])
+        if config.telemetry.json_logging:
+            record.setdefault("extra", {})
+            record["extra"]["serialized"] = serialize_json(record)
+    
+    logger = _loguru_logger.patch(patch_record)
+    
+    # Configure stdout handler
     if config.telemetry.json_logging:
-        # JSON format
         logger.add(
             sys.stdout,
-            format=lambda record: serialize_json(record) + "\n",
+            format="{extra[serialized]}",
             level=config.settings.log_level,
-            filter=lambda record: redact_sensitive(record["message"]) or True
+            colorize=False
         )
     else:
-        # Human-readable format
         logger.add(
             sys.stdout,
             format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-            level=config.settings.log_level,
-            filter=lambda record: redact_sensitive(record["message"]) or True
+            level=config.settings.log_level
         )
     
     # Add file output if configured
@@ -85,7 +95,7 @@ def setup_logging():
             "logs/mini-atlas.log",
             rotation="10 MB",
             retention="7 days",
-            format=lambda record: serialize_json(record) + "\n" if config.telemetry.json_logging else "{time} | {level} | {message}",
+            format="{extra[serialized]}" if config.telemetry.json_logging else "{time} | {level} | {message}",
             level=config.settings.log_level
         )
 

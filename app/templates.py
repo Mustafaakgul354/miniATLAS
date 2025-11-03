@@ -1,5 +1,664 @@
 """HTML templates for web UI."""
 
+def atlas_interface_html() -> str:
+    """Modern ATLAS-style interface with split view."""
+    return """<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mini-Atlas - AI Browser Agent</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 60px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .url-bar {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .url-input {
+            flex: 1;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .url-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+        }
+
+        .btn-danger {
+            background: #d32f2f;
+        }
+
+        /* Main Split Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* Browser Panel (Left) */
+        .browser-panel {
+            flex: 1;
+            background: #ffffff;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .browser-header {
+            background: #f5f5f5;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .browser-url {
+            flex: 1;
+            font-size: 13px;
+            color: #666;
+            font-family: monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .browser-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .browser-placeholder {
+            text-align: center;
+            color: #999;
+        }
+
+        .browser-placeholder h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .screenshot-view {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #f5f5f5;
+        }
+
+        /* Agent Panel (Right) */
+        .agent-panel {
+            width: 450px;
+            background: #1a1a1a;
+            border-left: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .agent-header {
+            padding: 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .agent-header h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .goals-input {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .goals-input:focus {
+            border-color: #667eea;
+        }
+
+        .status-bar {
+            padding: 15px 20px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #3a3a3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.running {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.waiting {
+            background: #ff9800;
+        }
+
+        .status-dot.completed {
+            background: #2196f3;
+        }
+
+        .status-dot.failed {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .steps-counter {
+            font-size: 13px;
+            color: #999;
+        }
+
+        /* Steps Container */
+        .steps-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .step-item {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+
+        .step-item:hover {
+            border-color: #667eea;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .step-number {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .step-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .step-action {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 8px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            color: #e0e0e0;
+        }
+
+        .step-action-type {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .step-reasoning {
+            font-size: 13px;
+            color: #aaa;
+            font-style: italic;
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .step-result {
+            font-size: 12px;
+            padding: 8px;
+            border-radius: 5px;
+            margin-top: 8px;
+        }
+
+        .step-result.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #81c784;
+        }
+
+        .step-result.error {
+            background: rgba(244, 67, 54, 0.1);
+            color: #e57373;
+        }
+
+        /* Scrollbar Styling */
+        .steps-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .steps-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .steps-container::-webkit-scrollbar-thumb {
+            background: #3a3a3a;
+            border-radius: 4px;
+        }
+
+        .steps-container::-webkit-scrollbar-thumb:hover {
+            background: #4a4a4a;
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #3a3a3a;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">🤖 mini-Atlas</div>
+        <div class="url-bar">
+            <input type="text" id="urlInput" class="url-input" placeholder="Enter URL to navigate...">
+            <button id="startBtn" class="btn" onclick="startSession()">Start Agent</button>
+            <button id="stopBtn" class="btn btn-danger" onclick="stopSession()" style="display:none;">Stop</button>
+            <button class="btn btn-secondary" onclick="window.location.href='/'">Dashboard</button>
+        </div>
+    </div>
+
+    <!-- Main Split Layout -->
+    <div class="main-container">
+        <!-- Browser Panel (Left) -->
+        <div class="browser-panel">
+            <div class="browser-header">
+                <span style="font-weight: 600; color: #333;">Browser View:</span>
+                <span id="browserUrl" class="browser-url">Not started</span>
+            </div>
+            <div id="browserContent" class="browser-content">
+                <div class="browser-placeholder">
+                    <div style="font-size: 64px; margin-bottom: 20px;">🌐</div>
+                    <h2>No Active Session</h2>
+                    <p>Enter a URL and goals to start the AI agent</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Panel (Right) -->
+        <div class="agent-panel">
+            <div class="agent-header">
+                <h2>AI Agent Goals</h2>
+                <textarea id="goalsInput" class="goals-input" placeholder="Enter goals (one per line)...
+Example:
+- Navigate to login page
+- Fill in credentials
+- Submit form"></textarea>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div id="statusDot" class="status-dot"></div>
+                    <span id="statusText">Idle</span>
+                </div>
+                <div id="stepsCounter" class="steps-counter">0 steps</div>
+            </div>
+
+            <div id="stepsContainer" class="steps-container">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <p>Agent steps will appear here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentSessionId = null;
+        let refreshInterval = null;
+
+        async function startSession() {
+            const url = document.getElementById('urlInput').value.trim();
+            const goalsText = document.getElementById('goalsInput').value.trim();
+
+            if (!url || !goalsText) {
+                alert('Please enter both URL and goals');
+                return;
+            }
+
+            const goals = goalsText.split('\\n')
+                .map(g => g.trim().replace(/^[-•*]\\s*/, ''))
+                .filter(g => g);
+
+            if (goals.length === 0) {
+                alert('Please enter at least one goal');
+                return;
+            }
+
+            try {
+                document.getElementById('startBtn').disabled = true;
+                updateStatus('running', 'Starting...');
+
+                const response = await fetch(`${API_BASE}/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: url,
+                        goals: goals,
+                        max_steps: 20
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to start session');
+                }
+
+                const result = await response.json();
+                currentSessionId = result.session_id;
+
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'inline-block';
+
+                // Start polling for updates
+                startPolling();
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                document.getElementById('startBtn').disabled = false;
+                updateStatus('idle', 'Error');
+            }
+        }
+
+        async function stopSession() {
+            if (!currentSessionId) return;
+
+            try {
+                await fetch(`${API_BASE}/stop/${currentSessionId}`, {
+                    method: 'POST'
+                });
+
+                stopPolling();
+                updateStatus('idle', 'Stopped');
+                document.getElementById('stopBtn').style.display = 'none';
+                document.getElementById('startBtn').style.display = 'inline-block';
+                document.getElementById('startBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Stop error:', error);
+            }
+        }
+
+        function startPolling() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            
+            loadSessionData(); // Load immediately
+            refreshInterval = setInterval(loadSessionData, 2000); // Then every 2 seconds
+        }
+
+        function stopPolling() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        async function loadSessionData() {
+            if (!currentSessionId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/session/${currentSessionId}/full`);
+                if (!response.ok) return;
+
+                const session = await response.json();
+
+                // Update browser view
+                document.getElementById('browserUrl').textContent = session.current_url;
+                updateBrowserView(session);
+
+                // Update status
+                updateStatus(session.status, getStatusText(session.status));
+                document.getElementById('stepsCounter').textContent = `${session.steps_count} steps`;
+
+                // Update steps
+                displaySteps(session.steps);
+
+                // Stop polling if session is done
+                if (session.status === 'completed' || session.status === 'failed' || session.status === 'stopped') {
+                    stopPolling();
+                    document.getElementById('stopBtn').style.display = 'none';
+                    document.getElementById('startBtn').style.display = 'inline-block';
+                    document.getElementById('startBtn').disabled = false;
+                }
+
+            } catch (error) {
+                console.error('Load error:', error);
+            }
+        }
+
+        function updateBrowserView(session) {
+            const container = document.getElementById('browserContent');
+            
+            // Get latest screenshot
+            const latestStep = session.steps[session.steps.length - 1];
+            if (latestStep && latestStep.screenshot) {
+                container.innerHTML = `
+                    <img src="data:image/png;base64,${latestStep.screenshot}" 
+                         class="screenshot-view" 
+                         alt="Browser View">
+                `;
+            } else if (session.steps.length > 0) {
+                container.innerHTML = `
+                    <div class="browser-placeholder">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⚡</div>
+                        <h2>Agent Running</h2>
+                        <p>${session.current_url}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateStatus(status, text) {
+            const dot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            dot.className = 'status-dot ' + status;
+            statusText.textContent = text;
+        }
+
+        function displaySteps(steps) {
+            const container = document.getElementById('stepsContainer');
+
+            if (steps.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>Agent steps will appear here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Show steps in reverse order (newest first)
+            const stepsHtml = [...steps].reverse().map(step => {
+                const actionHtml = step.action ? `
+                    <div class="step-action">
+                        <span class="step-action-type">${step.action.action}</span>
+                        ${step.action.selector ? ` → ${step.action.selector}` : ''}
+                        ${step.action.value ? ` = "${step.action.value}"` : ''}
+                    </div>
+                ` : '';
+
+                const reasoningHtml = step.reasoning ? `
+                    <div class="step-reasoning">${step.reasoning}</div>
+                ` : '';
+
+                const resultHtml = step.result ? `
+                    <div class="step-result ${step.error ? 'error' : 'success'}">
+                        ${step.error ? '❌ ' : '✓ '}${step.result}
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="step-item">
+                        <div class="step-header">
+                            <span class="step-number">Step #${step.step_number}</span>
+                            <span class="step-time">${formatTime(step.timestamp)}</span>
+                        </div>
+                        ${reasoningHtml}
+                        ${actionHtml}
+                        ${resultHtml}
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = stepsHtml;
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'running': 'Running',
+                'completed': 'Completed',
+                'failed': 'Failed',
+                'stopped': 'Stopped',
+                'waiting_human': 'Waiting (CAPTCHA)'
+            };
+            return statusMap[status] || status;
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopPolling();
+        });
+    </script>
+</body>
+</html>"""
+
 def dashboard_html() -> str:
     """Main dashboard HTML."""
     return """<!DOCTYPE html>
@@ -201,6 +860,11 @@ def dashboard_html() -> str:
         <div class="header">
             <h1>🤖 mini-Atlas</h1>
             <p>LLM-Powered Browser Automation Agent</p>
+            <div style="margin-top: 15px;">
+                <a href="/atlas" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: transform 0.2s;">
+                    🚀 ATLAS Interface (Yeni!)
+                </a>
+            </div>
         </div>
 
         <div class="new-session" style="margin-bottom: 20px;">
