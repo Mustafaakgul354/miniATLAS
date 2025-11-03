@@ -1,5 +1,17 @@
 # mini-Atlas Kullanım Kılavuzu
 
+## DigitalOcean Droplet'e Kurulum
+
+mini-Atlas'ı DigitalOcean droplet'inize tek komutla kurabilirsiniz:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Mustafaakgul354/miniATLAS/main/deploy_droplet.sh | sudo bash
+```
+
+Detaylı kurulum talimatları için [DROPLET_KURULUM.md](DROPLET_KURULUM.md) dosyasına bakın.
+
+---
+
 ## Görsel Arayüz ve Çıktılar
 
 mini-Atlas artık modern bir web arayüzü ile birlikte geliyor! Tüm oturumları ve çıktıları görsel olarak takip edebilirsiniz.

@@ -110,6 +110,29 @@ docker run -p 8000:8000 --env-file .env mini-atlas
 
 ---
 
+## Deploy to DigitalOcean Droplet
+
+Deploy mini-Atlas to a DigitalOcean droplet with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Mustafaakgul354/miniATLAS/main/deploy_droplet.sh | sudo bash
+```
+
+This automated script will:
+- Install all system dependencies (Docker, Nginx, etc.)
+- Clone the repository to `/opt/mini-atlas`
+- Configure Nginx reverse proxy
+- Set up systemd service for non-Docker deployments
+
+After deployment:
+1. Edit `/opt/mini-atlas/.env` with your configuration
+2. Start with Docker: `cd /opt/mini-atlas && docker-compose -f docker/docker-compose.yml up -d`
+3. Access at `http://YOUR_DROPLET_IP`
+
+For detailed instructions, SSL setup, and troubleshooting, see [DROPLET_DEPLOYMENT.md](DROPLET_DEPLOYMENT.md).
+
+---
+
 ## Configuration Deep Dive
 
 ### Environment variables (`.env`)
