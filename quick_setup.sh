@@ -21,8 +21,14 @@ fi
 # Clone repository
 if [ ! -d "$INSTALL_DIR" ]; then
     echo "📥 Cloning repository to $INSTALL_DIR..."
+    if ! command -v git &> /dev/null; then
+        echo "❌ Error: git is not installed. Please install git first:"
+        echo "   sudo apt-get update && sudo apt-get install -y git"
+        exit 1
+    fi
     if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
         echo "❌ Failed to clone repository from $REPO_URL"
+        echo "   Check your internet connection and that the repository URL is correct."
         exit 1
     fi
 else

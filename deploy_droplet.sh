@@ -39,8 +39,12 @@ fi
 
 # Install Docker Compose
 if ! command -v docker-compose &> /dev/null; then
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    echo "📦 Installing Docker Compose..."
+    # Use Docker Compose v2.24.5 (stable version)
+    COMPOSE_VERSION="2.24.5"
+    sudo curl -L "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
+    echo "✓ Docker Compose v${COMPOSE_VERSION} installed"
 fi
 
 # Clone repository if not already cloned
@@ -70,8 +74,13 @@ if [ ! -f ".env" ]; then
     if [ -t 0 ]; then
         read -p "Press enter to continue after editing .env file..."
     else
-        echo "Running in non-interactive mode. Please edit .env manually before starting the application."
+        echo "Running in non-interactive mode."
+        echo "⚠️  WARNING: .env file created with example values."
+        echo "   You MUST edit /opt/mini-atlas/.env before starting the application."
+        echo "   The application will NOT work without proper configuration!"
     fi
+else
+    echo "✓ .env file already exists"
 fi
 
 # Create necessary directories
