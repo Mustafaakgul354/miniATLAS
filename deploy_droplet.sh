@@ -15,14 +15,18 @@ sudo apt-get upgrade -y
 echo "📦 Installing system dependencies..."
 sudo apt-get install -y \
     git \
-    python3.11 \
-    python3.11-venv \
+    python3 \
+    python3-venv \
     python3-pip \
     nginx \
     certbot \
     python3-certbot-nginx \
     curl \
     wget
+
+# Verify Python version
+PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)
+echo "📌 Detected Python version: $PYTHON_VERSION"
 
 # Install Docker and Docker Compose
 echo "🐳 Installing Docker..."
@@ -61,7 +65,13 @@ if [ ! -f ".env" ]; then
     echo "   - OPENAI_API_KEY (required if using OpenAI)"
     echo "   - Other environment variables as needed"
     echo ""
-    read -p "Press enter to continue after editing .env file..."
+    
+    # Check if running in interactive terminal
+    if [ -t 0 ]; then
+        read -p "Press enter to continue after editing .env file..."
+    else
+        echo "Running in non-interactive mode. Please edit .env manually before starting the application."
+    fi
 fi
 
 # Create necessary directories
@@ -138,7 +148,7 @@ echo "   docker-compose -f docker/docker-compose.yml up -d"
 echo ""
 echo "   Option B - Direct Python:"
 echo "   cd /opt/mini-atlas"
-echo "   python3.11 -m venv .venv"
+echo "   python3 -m venv .venv"
 echo "   source .venv/bin/activate"
 echo "   pip install -r requirements.txt"
 echo "   playwright install chromium"

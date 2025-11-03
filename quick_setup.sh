@@ -21,7 +21,10 @@ fi
 # Clone repository
 if [ ! -d "$INSTALL_DIR" ]; then
     echo "📥 Cloning repository to $INSTALL_DIR..."
-    git clone "$REPO_URL" "$INSTALL_DIR"
+    if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
+        echo "❌ Failed to clone repository from $REPO_URL"
+        exit 1
+    fi
 else
     echo "📂 Repository already exists at $INSTALL_DIR"
 fi
