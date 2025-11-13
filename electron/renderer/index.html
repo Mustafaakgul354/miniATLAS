@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mini-Atlas Browser Agent</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>🤖 mini-Atlas Browser Agent</h1>
+      <div id="backend-status" class="status-badge">Checking backend...</div>
+    </header>
+
+    <!-- Navigation Bar (Phase 1) -->
+    <div class="nav-bar">
+      <input 
+        type="text" 
+        id="url-input" 
+        class="url-input" 
+        placeholder="Enter URL (e.g., https://www.google.com)"
+        value="https://www.google.com"
+      >
+      <button id="go-btn" class="btn btn-primary">Go</button>
+      <button id="summarize-btn" class="btn btn-secondary">Summarize Page</button>
+    </div>
+
+    <!-- Task Input (Phase 3) -->
+    <div class="task-bar">
+      <input 
+        type="text" 
+        id="task-input" 
+        class="task-input" 
+        placeholder="Enter task in natural language (e.g., 'Search for Playwright automation and click the first result')"
+      >
+      <button id="execute-task-btn" class="btn btn-success">Execute Task</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Left Panel - Agent Status -->
+      <div class="left-panel">
+        <div class="panel-header">
+          <h2>Agent Status</h2>
+        </div>
+        
+        <div id="session-info" class="session-info">
+          <p><strong>Session ID:</strong> <span id="session-id">None</span></p>
+          <p><strong>Status:</strong> <span id="session-status">Idle</span></p>
+          <p><strong>Current URL:</strong> <span id="current-url">-</span></p>
+          <p><strong>Steps:</strong> <span id="steps-count">0</span></p>
+        </div>
+
+        <div id="summary-display" class="summary-section" style="display: none;">
+          <h3>Page Summary</h3>
+          <div id="summary-content" class="summary-content"></div>
+        </div>
+
+        <div id="reasoning-display" class="reasoning-section">
+          <h3>Agent Reasoning</h3>
+          <div id="reasoning-content" class="reasoning-content">
+            <p class="placeholder">Agent reasoning will appear here...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel - Browser View & Screenshots -->
+      <div class="right-panel">
+        <div class="panel-header">
+          <h2>Browser View</h2>
+          <button id="refresh-btn" class="btn btn-small">Refresh Status</button>
+        </div>
+
+        <div id="browser-view" class="browser-view">
+          <div id="loading-indicator" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Agent is working...</p>
+          </div>
+          
+          <div id="screenshot-container" class="screenshot-container">
+            <p class="placeholder">Navigate to a URL to see the page</p>
+          </div>
+        </div>
+
+        <!-- Action History -->
+        <div class="action-history">
+          <h3>Action History</h3>
+          <div id="action-list" class="action-list">
+            <p class="placeholder">Actions will appear here...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span id="status-message">Ready</span>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
