@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mini-Atlas Desktop</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="logo">🤖 mini-Atlas</div>
+            <div class="address-bar-container">
+                <input type="text" id="addressBar" class="address-bar" placeholder="Enter URL or task...">
+                <button id="goButton" class="btn btn-primary">Go</button>
+                <button id="summarizeButton" class="btn btn-secondary">Summarize</button>
+                <button id="stopButton" class="btn btn-danger" style="display: none;">Stop</button>
+            </div>
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </div>
+
+        <!-- Main Content - 2 Panel Layout -->
+        <div class="main-content">
+            <!-- Left Panel: Browser View -->
+            <div class="left-panel">
+                <div class="panel-header">
+                    <h3>Browser View</h3>
+                    <div class="panel-controls">
+                        <span id="currentUrl" class="current-url">No active session</span>
+                    </div>
+                </div>
+                <div class="browser-content" id="browserContent">
+                    <div class="empty-state">
+                        <div class="empty-icon">🌐</div>
+                        <h2>No Active Session</h2>
+                        <p>Enter a URL and click Go to start navigation</p>
+                        <p class="hint">Or enter a task like: "Search for Playwright automation and click first result"</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Agent Activity -->
+            <div class="right-panel">
+                <div class="panel-header">
+                    <h3>Agent Activity</h3>
+                    <div class="session-info">
+                        <span id="stepCounter">0 steps</span>
+                    </div>
+                </div>
+                <div class="activity-content" id="activityContent">
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <p>Agent steps and reasoning will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="label">Backend:</span>
+                <span id="backendStatus" class="value">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="label">Session:</span>
+                <span id="sessionId" class="value">-</span>
+            </div>
+            <div class="status-item">
+                <span class="label">Mode:</span>
+                <span id="currentMode" class="value">Navigation</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

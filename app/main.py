@@ -152,6 +152,14 @@ async def run_agent_task(
             if not page:
                 raise Exception("Failed to create page")
             
+            # Check if page is still open before applying behavior
+            try:
+                if not page.is_closed():
+                    # Apply stealth and human behavior
+                    await playwright_runner.emulate_human_behavior(page)
+            except Exception as e:
+                logger.warning(f"Could not apply human behavior: {e}")
+            
             # Get network monitor
             network_monitor = await playwright_runner.get_network_monitor(session_id)
             

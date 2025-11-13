@@ -246,6 +246,12 @@ class LLMClient:
                 
                 # Map to appropriate action class
                 action_type = action_data.get("action")
+                
+                # Normalize action type (handle common variations)
+                if action_type == "navigate":
+                    action_type = "goto"
+                    action_data["action"] = "goto"
+                
                 if action_type == "click":
                     from .schemas import ClickAction
                     return ClickAction(**action_data)

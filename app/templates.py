@@ -435,12 +435,17 @@ Example:
         let refreshInterval = null;
 
         async function startSession() {
-            const url = document.getElementById('urlInput').value.trim();
+            let url = document.getElementById('urlInput').value.trim();
             const goalsText = document.getElementById('goalsInput').value.trim();
 
             if (!url || !goalsText) {
                 alert('Please enter both URL and goals');
                 return;
+            }
+
+            // Auto-add https:// if protocol is missing
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
             }
 
             const goals = goalsText.split('\\n')
@@ -467,7 +472,8 @@ Example:
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to start session');
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || 'Failed to start session');
                 }
 
                 const result = await response.json();
@@ -522,11 +528,12 @@ Example:
         async function loadSessionData() {
             if (!currentSessionId) return;
 
+            let session = null;
             try {
                 const response = await fetch(`${API_BASE}/api/session/${currentSessionId}/full`);
                 if (!response.ok) return;
 
-                const session = await response.json();
+                session = await response.json();
 
                 // Update browser view
                 document.getElementById('browserUrl').textContent = session.current_url;
@@ -545,10 +552,27 @@ Example:
                     document.getElementById('stopBtn').style.display = 'none';
                     document.getElementById('startBtn').style.display = 'inline-block';
                     document.getElementById('startBtn').disabled = false;
+                    
+                    // Show error message if failed
+                    if (session.status === 'failed' && session.steps && session.steps.length > 0) {
+                        const lastStep = session.steps[session.steps.length - 1];
+                        if (lastStep && lastStep.error) {
+                            const container = document.getElementById('stepsContainer');
+                            container.innerHTML = `
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">❌</div>
+                                    <h3>Session Failed</h3>
+                                    <p style="color: #e57373; margin-top: 10px;">${lastStep.error}</p>
+                                </div>
+                                ${container.innerHTML}
+                            `;
+                        }
+                    }
                 }
 
             } catch (error) {
                 console.error('Load error:', error);
+                updateStatus('failed', 'Error Loading Session');
             }
         }
 

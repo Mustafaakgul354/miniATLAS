@@ -1,7 +1,7 @@
 """Action executor for browser interactions."""
 
 import asyncio
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from playwright.async_api import Page, TimeoutError as PlaywrightTimeout
 
@@ -75,20 +75,37 @@ class ActionExecutor:
         try:
             # Wait for element to be clickable
             locator = page.locator(selector)
+            
+            # Check if multiple elements match (strict mode violation)
+            count = await locator.count()
+            if count > 1:
+                logger.warning(f"Multiple elements ({count}) found for selector: {selector}, using first")
+                locator = locator.first
+            
             await locator.wait_for(state="visible", timeout=self.default_timeout)
             
             # Scroll into view if needed
             await locator.scroll_into_view_if_needed()
             
-            # Click
-            await locator.click()
+            # Human-like click: move mouse to element first, then click
+            import random
+            box = await locator.bounding_box()
+            if box:
+                # Move mouse to element with slight randomness
+                center_x = box['x'] + box['width'] / 2 + random.uniform(-2, 2)
+                center_y = box['y'] + box['height'] / 2 + random.uniform(-2, 2)
+                await page.mouse.move(center_x, center_y, steps=random.randint(5, 15))
+                await asyncio.sleep(random.uniform(0.05, 0.15))  # Small pause before click
+            
+            # Click with slight delay
+            await locator.click(delay=random.randint(50, 150))
             
             # Wait after action
             if self.wait_after_action > 0:
                 await asyncio.sleep(self.wait_after_action / 1000)
             
             logger.info(f"Clicked: {selector}")
-            return True, None, {"clicked": selector}
+            return True, None, {"clicked": selector, "multiple_found": count > 1}
             
         except PlaywrightTimeout:
             # Try healing selector
@@ -98,6 +115,9 @@ class ActionExecutor:
             for alt_selector in alternatives[:3]:  # Try top 3 alternatives
                 try:
                     locator = page.locator(alt_selector)
+                    count = await locator.count()
+                    if count > 1:
+                        locator = locator.first
                     await locator.wait_for(state="visible", timeout=2000)
                     await locator.click()
                     
@@ -110,7 +130,25 @@ class ActionExecutor:
             return False, f"Element not found or not clickable: {selector}", None
             
         except Exception as e:
-            return False, f"Click failed: {str(e)}", None
+            error_msg = str(e)
+            # Handle strict mode violation
+            if "strict mode violation" in error_msg.lower() or "resolved to" in error_msg.lower():
+                try:
+                    logger.warning(f"Strict mode violation for {selector}, trying first match")
+                    locator = page.locator(selector).first
+                    await locator.wait_for(state="visible", timeout=self.default_timeout)
+                    await locator.scroll_into_view_if_needed()
+                    await locator.click()
+                    
+                    if self.wait_after_action > 0:
+                        await asyncio.sleep(self.wait_after_action / 1000)
+                    
+                    logger.info(f"Clicked first match: {selector}")
+                    return True, None, {"clicked": selector, "used_first": True}
+                except Exception as retry_error:
+                    return False, f"Click failed (multiple elements): {str(retry_error)}", None
+            
+            return False, f"Click failed: {error_msg}", None
     
     async def _execute_fill(
         self,
@@ -130,8 +168,13 @@ class ActionExecutor:
             # Clear existing content
             await locator.clear()
             
-            # Type with delay to appear more human-like
-            await locator.type(value, delay=50)
+            # Type with human-like delays (variable per character)
+            import random
+            for char in value:
+                await locator.type(char, delay=random.randint(30, 120))
+                # Occasional longer pauses (like humans do)
+                if random.random() < 0.1:  # 10% chance
+                    await asyncio.sleep(random.uniform(0.1, 0.3))
             
             # Press Enter if requested
             if press_enter:
@@ -145,9 +188,129 @@ class ActionExecutor:
             return True, None, {"filled": selector, "value_length": len(value)}
             
         except PlaywrightTimeout:
+            # Try alternative selectors for form fields
+            logger.warning(f"Fill timeout for selector: {selector}, trying alternatives")
+            
+            # Generate alternative selectors
+            alternatives = self._get_fill_alternatives(selector, value)
+            
+            for alt_selector in alternatives:
+                try:
+                    locator = page.locator(alt_selector)
+                    count = await locator.count()
+                    if count == 0:
+                        continue
+                    if count > 1:
+                        locator = locator.first
+                    
+                    await locator.wait_for(state="visible", timeout=2000)
+                    await locator.clear()
+                    await locator.type(value, delay=50)
+                    
+                    if press_enter:
+                        await locator.press("Enter")
+                    
+                    if self.wait_after_action > 0:
+                        await asyncio.sleep(self.wait_after_action / 1000)
+                    
+                    logger.info(f"Filled with alternative selector: {alt_selector}")
+                    return True, None, {"filled": alt_selector, "healed": True, "value_length": len(value)}
+                    
+                except Exception:
+                    continue
+            
             return False, f"Element not found: {selector}", None
+            
         except Exception as e:
-            return False, f"Fill failed: {str(e)}", None
+            error_msg = str(e)
+            # Try alternatives on any error
+            logger.warning(f"Fill error for {selector}: {error_msg}, trying alternatives")
+            
+            alternatives = self._get_fill_alternatives(selector, value)
+            for alt_selector in alternatives:
+                try:
+                    locator = page.locator(alt_selector)
+                    count = await locator.count()
+                    if count == 0:
+                        continue
+                    if count > 1:
+                        locator = locator.first
+                    
+                    await locator.wait_for(state="visible", timeout=2000)
+                    await locator.clear()
+                    await locator.type(value, delay=50)
+                    
+                    if press_enter:
+                        await locator.press("Enter")
+                    
+                    if self.wait_after_action > 0:
+                        await asyncio.sleep(self.wait_after_action / 1000)
+                    
+                    logger.info(f"Filled with alternative selector: {alt_selector}")
+                    return True, None, {"filled": alt_selector, "healed": True, "value_length": len(value)}
+                    
+                except Exception:
+                    continue
+            
+            return False, f"Fill failed: {error_msg}", None
+    
+    def _get_fill_alternatives(self, selector: str, value: str) -> List[str]:
+        """Generate alternative selectors for form fields."""
+        alternatives = []
+        
+        # If selector contains name attribute, try variations
+        if "name=" in selector:
+            # Extract name value
+            try:
+                name_match = selector.split("name=")[1].split("]")[0].strip("'\"")
+                alternatives.extend([
+                    f"input[name='{name_match}']",
+                    f"input[name=\"{name_match}\"]",
+                    f"input[placeholder*='{name_match}']",
+                    f"input[aria-label*='{name_match}']",
+                    f"input[id*='{name_match}']",
+                ])
+            except:
+                pass
+        
+        # Try common email/password field patterns
+        if "@" in value or "email" in selector.lower() or "e-posta" in selector.lower():
+            alternatives.extend([
+                "input[type='email']",
+                "input[type='text'][placeholder*='email' i]",
+                "input[type='text'][placeholder*='e-posta' i]",
+                "input[type='text'][placeholder*='mail' i]",
+                "input[aria-label*='email' i]",
+                "input[aria-label*='e-posta' i]",
+                "input[id*='email']",
+                "input[id*='mail']",
+                "input[name*='email']",
+                "input[name*='mail']",
+            ])
+        
+        if "password" in selector.lower() or "şifre" in selector.lower():
+            alternatives.extend([
+                "input[type='password']",
+                "input[placeholder*='password' i]",
+                "input[placeholder*='şifre' i]",
+                "input[aria-label*='password' i]",
+                "input[aria-label*='şifre' i]",
+                "input[id*='password']",
+                "input[id*='pass']",
+                "input[name*='password']",
+                "input[name*='pass']",
+            ])
+        
+        # Try generic input selectors
+        alternatives.extend([
+            "input[type='text']:visible",
+            "input:visible",
+        ])
+        
+        # Add healed selector alternatives
+        alternatives.extend(heal_selector(selector, "Element not found"))
+        
+        return alternatives
     
     async def _execute_goto(
         self,

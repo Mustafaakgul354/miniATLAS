@@ -49,8 +49,21 @@ class AgentLoop:
             # Navigate to initial URL
             if session.url:
                 logger.info(f"Navigating to initial URL: {session.url}")
-                await page.goto(session.url, wait_until="domcontentloaded")
-                await asyncio.sleep(1)  # Let page stabilize
+                try:
+                    # Check if page is already closed
+                    if page.is_closed():
+                        raise Exception("Page was closed before navigation")
+                    
+                    await page.goto(session.url, wait_until="domcontentloaded", timeout=30000)
+                    await asyncio.sleep(1)  # Let page stabilize
+                    
+                    # Verify page is still open after navigation
+                    if page.is_closed():
+                        raise Exception("Page was closed after navigation")
+                except Exception as nav_error:
+                    logger.error(f"Navigation failed: {nav_error}")
+                    session.status = SessionStatus.FAILED
+                    return session
             
             # Main reasoning loop
             while (
@@ -58,6 +71,17 @@ class AgentLoop:
                 session.steps_count < self.max_steps and
                 (time.time() - start_time) < self.total_timeout
             ):
+                # Check if page is still open
+                try:
+                    if page.is_closed():
+                        logger.error("Page was closed during agent loop")
+                        session.status = SessionStatus.FAILED
+                        break
+                except Exception as check_error:
+                    logger.error(f"Error checking page status: {check_error}")
+                    session.status = SessionStatus.FAILED
+                    break
+                
                 step_start = time.time()
                 
                 try:
@@ -264,6 +288,10 @@ class AgentLoop:
     ) -> ObservationState:
         """Gather current page state."""
         try:
+            # Check if page is closed
+            if page.is_closed():
+                raise Exception("Page is closed, cannot observe")
+            
             # Basic page info
             url = page.url
             title = await page.title()
