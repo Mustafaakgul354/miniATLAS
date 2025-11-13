@@ -12,14 +12,20 @@ mini-Atlas is a self-hosted browser automation agent inspired by ChatGPT Atlas. 
 - **Human-aware safeguards** – CAPTCHA detection, sensitive-action validation, network monitors.
 - **Rich observability** – live screenshots, structured JSON logging, session timelines.
 - **Flexible deployment** – run locally, in Docker, or behind your own API gateway.
+- **Desktop application** – Native Electron-based desktop app with intuitive UI for browser automation.
 
-For a tour of the ATLAS interface see `ATLAS_INTERFACE.md`. Release notes live in `CHANGELOG_ATLAS.md`, and quick recipes in `QUICKSTART_ATLAS.md`.
+For a tour of the ATLAS interface see `ATLAS_INTERFACE.md`. For the desktop app see `ELECTRON_README.md`. Release notes live in `CHANGELOG_ATLAS.md`, and quick recipes in `QUICKSTART_ATLAS.md`.
 
 ---
 
 ## Architecture at a Glance
 
 ```
+                          ┌─────────────────────┐
+                          │ Electron Desktop    │
+                          │    Application      │
+                          └──────────┬──────────┘
+                                     │ HTTP
 ┌───────────────┐      REST / WebSocket      ┌─────────────────────┐
 │   Web & CLI   │ ─────────────────────────▶ │ FastAPI Application │
 └───────────────┘                            │  (Session control)  │
@@ -168,6 +174,31 @@ Environment variables override YAML values at runtime. Extend the schema in `app
 ---
 
 ## Ways to Run mini-Atlas
+
+### Desktop application (Electron)
+
+**Best for**: Local development, testing, and daily use with a native app experience.
+
+```bash
+# Install Node.js dependencies
+npm install
+
+# Start the Python backend (in a separate terminal)
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Launch the desktop app
+npm start
+```
+
+Features:
+- **Phase 1**: Address bar for manual navigation to any URL
+- **Phase 2**: "Summarize Page" button for AI-powered page analysis
+- **Phase 3**: Natural language task execution with real-time monitoring
+- Real-time screenshots and action history
+- Session status monitoring
+- Intuitive UI for browser automation
+
+For detailed setup and usage instructions, see `ELECTRON_README.md`.
 
 ### Web interfaces
 
